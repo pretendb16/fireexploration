@@ -9,12 +9,8 @@ conn = pyodbc.connect(con_string)
 
 cur=conn.cursor()
 
-# This is just an example that works for PostgreSQL and MySQL, with Python 2.7.
-conn.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
-conn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
-conn.setencoding(encoding='utf-8')
 
-# find the years
+# find the years of fire occurance data
 
 cur.execute('SELECT fire_year FROM Fires')
 initial_year_value = cur.fetchone()
@@ -38,7 +34,7 @@ years= years.tolist()
 print(years)
 
 
-# get fire data
+# get fire occurance data
 CA_firecount_list=[]
 for i in years:
     cur.execute("SELECT fire_year FROM Fires WHERE state ='CA' AND fire_year=?",(i))
@@ -47,15 +43,47 @@ for i in years:
     CA_firecount_list+=[CA_firecount]
 print(CA_firecount_list)
 
+# fire size in California data
+# source: https://www.fire.ca.gov/media/11397/fires-acres-all-agencies-thru-2018.pdf
+
+fire_size_year_range=[1987,2018]
+fire_size_year=np.arange(fire_size_year_range[0],fire_size_year_range[1]+1,1)
+fire_size_year= fire_size_year.tolist()
+print(fire_size_year)
+
+fire_size_data=[873000,345000,173400,365200,44200,282745,309779,526219,209815,752372,283885,
+
+215412,1172850,295026,377340,538216,965770,311024,279214,863345,1520362,1593690,451969,134462,
+
+228599,829224,601635,625540,880899,669534,1548429,1975086]
+
+
+
 # plotting
 
 import matplotlib.pyplot as plt
 
 xpoints = np.array(years)
 ypoints = np.array(CA_firecount_list)
+xpoints_size=np.array(fire_size_year)
+ypoints_size=np.array(fire_size_data)
 
-plt.plot(xpoints, ypoints,'D-g',mec='r',mfc='r')
-plt.title('Trend of Fire Occurance in California from '+str(earliest_year[0])+' to '+str(latest_year[0]))
-plt.xlabel('Year')
-plt.ylabel('# of Fire Occurance in California')
+
+
+# source: https://www.kite.com/python/answers/how-to-plot-two-series-with-different-scales-in-python
+fig, ax_left = plt.subplots()
+ax_right = ax_left.twinx()
+
+lns1=ax_left.plot(xpoints, ypoints,'-r',label='Fire Occurance')
+lns2=ax_right.plot(xpoints_size,ypoints_size,'-g',label='Wildfire Burn Area')
+
+plt.title('Trend of Wildfire Occurance and Burn Area \n in California from '+str(fire_size_year_range[0])+' to '+str(fire_size_year_range[1]))
+ax_left.set_xlabel('Year')
+ax_left.set_ylabel('# of Fire Occurance in California')
+ax_right.set_ylabel('California Wildfire Burn Area (acres)')
+
+lns=lns1+lns2
+labs=[l.get_label() for l in lns]
+ax_left.legend(lns,labs,loc='upper center')
+
 plt.show()
